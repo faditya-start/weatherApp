@@ -32,4 +32,4 @@ export interface WeatherData {
 export interface WeatherError {
   message: string;
   code?: number;
-} 
+}

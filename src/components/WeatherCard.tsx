@@ -59,4 +59,4 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({ weatherData }) => {
       </div>
     </div>
   );
-}; 
+};
