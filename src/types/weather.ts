@@ -66,4 +66,4 @@ export interface ForecastData {
     sunrise: number;
     sunset: number;
   };
-} 
+}
