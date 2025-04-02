@@ -3,12 +3,14 @@ import { WeatherCard } from './components/WeatherCard'
 import { ForecastCard } from './components/ForecastCard'
 import { SearchBar } from './components/SearchBar'
 import { LocationButton } from './components/LocationButton'
+import { ThemeToggle } from './components/ThemeToggle'
+import { ThemeProvider } from './context/ThemeContext'
 import { getWeatherByCity, getForecastByCity, getWeatherByCoords, getForecastByCoords } from './services/weatherService'
 import { getCurrentPosition } from './services/geolocationService'
 import { WeatherData, ForecastData } from './types/weather'
 import './App.css'
 
-function App() {
+function WeatherApp() {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [forecast, setForecast] = useState<ForecastData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -59,8 +61,9 @@ function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-bold text-white mb-8">Weather App</h1>
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors">
+      <ThemeToggle />
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Weather App</h1>
       <div className="flex gap-4 w-full max-w-md">
         <SearchBar onSearch={handleSearch} />
         <LocationButton onLocationClick={handleLocationClick} isLoading={locationLoading} />
@@ -68,11 +71,11 @@ function App() {
       
       <div className="mt-8 w-full max-w-4xl">
         {(loading || locationLoading) && (
-          <div className="text-white text-center">Loading...</div>
+          <div className="text-gray-900 dark:text-white text-center">Loading...</div>
         )}
         
         {error && (
-          <div className="text-red-500 bg-red-100 p-4 rounded-lg text-center">
+          <div className="text-red-500 bg-red-100 dark:bg-red-900/30 p-4 rounded-lg text-center">
             {error}
           </div>
         )}
@@ -81,13 +84,21 @@ function App() {
           <>
             <WeatherCard weatherData={weather} />
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-white mb-4">5-Day Forecast</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">5-Day Forecast</h2>
               {forecast && <ForecastCard forecastData={forecast} />}
             </div>
           </>
         )}
       </div>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <WeatherApp />
+    </ThemeProvider>
   )
 }
 
