@@ -4,11 +4,12 @@ import { ForecastCard } from './components/ForecastCard'
 import { SearchBar } from './components/SearchBar'
 import { LocationButton } from './components/LocationButton'
 import { ThemeToggle } from './components/ThemeToggle'
-import { ThemeProvider } from './context/ThemeContext'
+import { ThemeProvider, useTheme } from './context/ThemeContext'
 import { getWeatherByCity, getForecastByCity, getWeatherByCoords, getForecastByCoords } from './services/weatherService'
 import { getCurrentPosition } from './services/geolocationService'
 import { WeatherData, ForecastData } from './types/weather'
 import './App.css'
+import { LoadingSpinner } from './components/LoadingSpinner'
 
 function WeatherApp() {
   const [weather, setWeather] = useState<WeatherData | null>(null)
@@ -16,19 +17,20 @@ function WeatherApp() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [locationLoading, setLocationLoading] = useState(false)
+  const { theme } = useTheme()
 
   const handleSearch = async (city: string) => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      setError(null)
       const [weatherData, forecastData] = await Promise.all([
         getWeatherByCity(city),
         getForecastByCity(city)
-      ]);
+      ])
       setWeather(weatherData)
       setForecast(forecastData)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'Failed to fetch weather data')
       setWeather(null)
       setForecast(null)
     } finally {
@@ -44,7 +46,7 @@ function WeatherApp() {
       const [weatherData, forecastData] = await Promise.all([
         getWeatherByCoords(position.latitude, position.longitude),
         getForecastByCoords(position.latitude, position.longitude)
-      ]);
+      ])
       setWeather(weatherData)
       setForecast(forecastData)
     } catch (err) {
@@ -61,26 +63,24 @@ function WeatherApp() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors">
-      <ThemeToggle />
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Weather App</h1>
-      <div className="flex gap-4 w-full max-w-md">
-        <SearchBar onSearch={handleSearch} />
-        <LocationButton onLocationClick={handleLocationClick} isLoading={locationLoading} />
-      </div>
-      
-      <div className="mt-8 w-full max-w-4xl">
-        {(loading || locationLoading) && (
-          <div className="text-gray-900 dark:text-white text-center">Loading...</div>
-        )}
+    <div className={`min-h-screen p-4 transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Weather App</h1>
+          <ThemeToggle />
+        </div>
         
-        {error && (
-          <div className="text-red-500 bg-red-100 dark:bg-red-900/30 p-4 rounded-lg text-center">
+        <SearchBar onSearch={handleSearch} />
+        
+        {loading ? (
+          <div className="flex justify-center items-center min-h-[400px]">
+            <LoadingSpinner size="large" />
+          </div>
+        ) : error ? (
+          <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-red-900/50 text-red-100' : 'bg-red-100 text-red-900'}`}>
             {error}
           </div>
-        )}
-        
-        {weather && !loading && !locationLoading && !error && (
+        ) : weather ? (
           <>
             <WeatherCard weatherData={weather} />
             <div className="mt-8">
@@ -88,6 +88,10 @@ function WeatherApp() {
               {forecast && <ForecastCard forecastData={forecast} />}
             </div>
           </>
+        ) : (
+          <div className={`text-center mt-8 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+            Enter a city name to get started
+          </div>
         )}
       </div>
     </div>
