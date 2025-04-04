@@ -24,6 +24,30 @@ interface OpenMeteoResponse {
   };
 }
 
+interface OpenMeteoForecastResponse {
+  daily: {
+    time: string[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    weather_code: number[];
+  };
+}
+
+export interface ForecastData {
+  list: Array<{
+    dt: number;
+    temp: {
+      min: number;
+      max: number;
+    };
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
+  }>;
+}
+
 const weatherCodeToDescription = (code: number): string => {
   const weatherCodes: { [key: number]: string } = {
     0: 'Clear sky',
@@ -106,6 +130,57 @@ export const fetchWeather = async (city: string): Promise<WeatherData> => {
     };
   } catch (error) {
     console.error('Error fetching weather:', error);
+    throw error;
+  }
+};
+
+export const getForecastByCity = async (city: string): Promise<ForecastData> => {
+  try {
+    // First, get coordinates from city name
+    const geocodingResponse = await fetch(
+      `${GEOCODING_API_URL}/search?name=${encodeURIComponent(city)}&count=1`
+    );
+    
+    if (!geocodingResponse.ok) {
+      throw new Error('City not found');
+    }
+
+    const geocodingData: GeocodingResponse = await geocodingResponse.json();
+    
+    if (!geocodingData.results?.[0]) {
+      throw new Error('City not found');
+    }
+
+    const { latitude, longitude } = geocodingData.results[0];
+
+    // Then, get forecast data using coordinates
+    const forecastResponse = await fetch(
+      `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`
+    );
+
+    if (!forecastResponse.ok) {
+      throw new Error('Failed to fetch forecast data');
+    }
+
+    const forecastData: OpenMeteoForecastResponse = await forecastResponse.json();
+
+    // Transform the data to match our ForecastData interface
+    return {
+      list: forecastData.daily.time.map((time, index) => ({
+        dt: new Date(time).getTime() / 1000,
+        temp: {
+          min: forecastData.daily.temperature_2m_min[index],
+          max: forecastData.daily.temperature_2m_max[index]
+        },
+        weather: [{
+          main: weatherCodeToDescription(forecastData.daily.weather_code[index]),
+          description: weatherCodeToDescription(forecastData.daily.weather_code[index]),
+          icon: getWeatherIcon(forecastData.daily.weather_code[index])
+        }]
+      }))
+    };
+  } catch (error) {
+    console.error('Error fetching forecast:', error);
     throw error;
   }
 };
