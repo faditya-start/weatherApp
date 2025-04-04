@@ -1,6 +1,7 @@
 import { ForecastData } from '../types/weather';
 import { useTemperature } from '../context/TemperatureContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ForecastCardProps {
   forecastData: ForecastData;
@@ -9,6 +10,7 @@ interface ForecastCardProps {
 export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
   const { convertTemperature, unit } = useTemperature();
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   // Mengelompokkan data ramalan cuaca berdasarkan hari
   const groupedForecast = forecastData.list.reduce((acc: { [key: string]: typeof forecastData.list[0][] }, item) => {
@@ -50,6 +52,11 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
   const dayColorClass = theme === 'dark' ? 'text-gray-200' : 'text-blue-900';
   const unitColorClass = theme === 'dark' ? 'text-gray-300' : 'text-blue-800';
 
+  const getDayTranslation = (date: string) => {
+    const day = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
+    return t(`days.${day}`);
+  };
+
   return (
     <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
       {dailyForecasts.map((forecast) => (
@@ -59,7 +66,7 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
         >
           <div className="flex flex-col items-center space-y-1">
             <p className={`text-base font-medium ${dayColorClass}`}>
-              {new Date(forecast.date).toLocaleDateString('id-ID', { weekday: 'short' })}
+              {getDayTranslation(forecast.date)}
             </p>
             <div className="flex items-baseline">
               <span className={`text-2xl font-bold ${textColorClass}`}>
@@ -71,7 +78,7 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
             </div>
             <img 
               src={`http://openweathermap.org/img/wn/${forecast.icon}.png`}
-              alt={forecast.weather}
+              alt={t(`weather.${forecast.weather}`)}
               className="w-12 h-12"
             />
           </div>

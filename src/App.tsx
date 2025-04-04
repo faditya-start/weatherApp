@@ -10,6 +10,8 @@ import { getWeatherByCity, getForecastByCity } from './services/weatherService'
 import { WeatherData, ForecastData } from './types/weather'
 import './App.css'
 import LoadingSpinner from './components/LoadingSpinner'
+import { LanguageProvider } from './context/LanguageContext'
+import { LanguageToggle } from './components/LanguageToggle'
 
 const WeatherApp: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
@@ -46,6 +48,7 @@ const WeatherApp: React.FC = () => {
         <div className="max-w-4xl mx-auto space-y-8">
           <header className="relative text-center space-y-4">
             <div className="absolute right-0 top-0 flex items-center gap-4">
+              <LanguageToggle />
               <TemperatureToggle />
               <div className="transition-transform duration-300 hover:scale-110">
                 <ThemeToggle />
@@ -118,7 +121,9 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <TemperatureProvider>
-        <WeatherApp />
+        <LanguageProvider>
+          <WeatherApp />
+        </LanguageProvider>
       </TemperatureProvider>
     </ThemeProvider>
   )
