@@ -1,5 +1,6 @@
 import { ForecastData } from '../types/weather';
 import { useTemperature } from '../context/TemperatureContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface ForecastCardProps {
   forecastData: ForecastData;
@@ -7,6 +8,7 @@ interface ForecastCardProps {
 
 export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
   const { convertTemperature, unit } = useTemperature();
+  const { theme } = useTheme();
 
   // Mengelompokkan data ramalan cuaca berdasarkan hari
   const groupedForecast = forecastData.list.reduce((acc: { [key: string]: typeof forecastData.list[0][] }, item) => {
@@ -44,18 +46,20 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
     };
   });
 
+  const textColorClass = theme === 'dark' ? 'text-white' : 'text-gray-800';
+
   return (
     <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
       {dailyForecasts.map((forecast) => (
         <div 
           key={forecast.date} 
-          className="bg-gradient-to-b from-blue-950/40 to-blue-950/60 rounded-3xl backdrop-blur-sm p-3"
+          className={`bg-gradient-to-b ${theme === 'dark' ? 'from-blue-950/40 to-blue-950/60' : 'from-blue-100/40 to-blue-200/60'} rounded-3xl backdrop-blur-sm p-3`}
         >
           <div className="flex flex-col items-center space-y-1">
-            <p className="text-base font-medium text-white">
+            <p className={`text-base font-medium ${textColorClass}`}>
               {new Date(forecast.date).toLocaleDateString('id-ID', { weekday: 'short' })}
             </p>
-            <p className="text-2xl font-bold text-white">
+            <p className={`text-2xl font-bold ${textColorClass}`}>
               {forecast.avgTemp}°{unit === 'celsius' ? 'C' : 'F'}
             </p>
             <img 
