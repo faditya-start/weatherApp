@@ -46,22 +46,29 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
     };
   });
 
-  const textColorClass = theme === 'dark' ? 'text-white' : 'text-gray-800';
+  const textColorClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
+  const dayColorClass = theme === 'dark' ? 'text-gray-200' : 'text-gray-700';
+  const unitColorClass = theme === 'dark' ? 'text-gray-300' : 'text-gray-600';
 
   return (
     <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
       {dailyForecasts.map((forecast) => (
         <div 
           key={forecast.date} 
-          className={`bg-gradient-to-b ${theme === 'dark' ? 'from-blue-950/40 to-blue-950/60' : 'from-blue-100/40 to-blue-200/60'} rounded-3xl backdrop-blur-sm p-3`}
+          className={`bg-gradient-to-b ${theme === 'dark' ? 'from-blue-950/40 to-blue-950/60' : 'from-blue-100/60 to-blue-200/80'} rounded-3xl backdrop-blur-sm p-3`}
         >
           <div className="flex flex-col items-center space-y-1">
-            <p className={`text-base font-medium ${textColorClass}`}>
+            <p className={`text-base font-medium ${dayColorClass}`}>
               {new Date(forecast.date).toLocaleDateString('id-ID', { weekday: 'short' })}
             </p>
-            <p className={`text-2xl font-bold ${textColorClass}`}>
-              {forecast.avgTemp}°{unit === 'celsius' ? 'C' : 'F'}
-            </p>
+            <div className="flex items-baseline">
+              <span className={`text-2xl font-bold ${textColorClass}`}>
+                {forecast.avgTemp}
+              </span>
+              <span className={`ml-0.5 text-lg font-medium ${unitColorClass}`}>
+                °{unit === 'celsius' ? 'C' : 'F'}
+              </span>
+            </div>
             <img 
               src={`http://openweathermap.org/img/wn/${forecast.icon}.png`}
               alt={forecast.weather}
