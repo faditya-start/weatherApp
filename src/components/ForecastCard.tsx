@@ -8,7 +8,7 @@ interface ForecastCardProps {
 export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
   const { convertTemperature, unit } = useTemperature();
 
-  // Group forecast data by day
+  // Mengelompokkan data ramalan cuaca berdasarkan hari
   const groupedForecast = forecastData.list.reduce((acc: { [key: string]: typeof forecastData.list[0][] }, item) => {
     const date = new Date(item.dt * 1000).toLocaleDateString();
     if (!acc[date]) {
@@ -18,9 +18,9 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
     return acc;
   }, {});
 
-  // Get daily averages
+  // Mendapatkan rata-rata harian
   const dailyForecasts = Object.entries(groupedForecast).slice(0, 5).map(([date, items]) => {
-    const avgTemp = items.reduce((sum, item) => sum + item.main.temp, 0) / items.length;
+    const avgTemp = items.reduce((sum, item) => sum + ((item.temp.max + item.temp.min) / 2), 0) / items.length;
     const mostFrequentWeather = items.reduce((acc, item) => {
       const weather = item.weather[0];
       if (!acc[weather.main]) {
@@ -45,22 +45,24 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
       {dailyForecasts.map((forecast) => (
-        <div key={forecast.date} className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-          <div className="text-center">
-            <p className="text-sm text-gray-300">
-              {new Date(forecast.date).toLocaleDateString('en-US', { weekday: 'short' })}
+        <div 
+          key={forecast.date} 
+          className="bg-gradient-to-b from-blue-900/40 to-blue-950/40 rounded-3xl backdrop-blur-sm p-3"
+        >
+          <div className="flex flex-col items-center space-y-1">
+            <p className="text-base font-medium text-white">
+              {new Date(forecast.date).toLocaleDateString('id-ID', { weekday: 'short' })}
             </p>
-            <img 
-              src={`http://openweathermap.org/img/wn/${forecast.icon}@2x.png`}
-              alt={forecast.weather}
-              className="w-16 h-16 mx-auto"
-            />
             <p className="text-2xl font-bold text-white">
               {forecast.avgTemp}°{unit === 'celsius' ? 'C' : 'F'}
             </p>
-            <p className="text-sm text-gray-300">{forecast.weather}</p>
+            <img 
+              src={`http://openweathermap.org/img/wn/${forecast.icon}.png`}
+              alt={forecast.weather}
+              className="w-12 h-12"
+            />
           </div>
         </div>
       ))}
