@@ -1,10 +1,13 @@
 import { ForecastData } from '../types/weather';
+import { useTemperature } from '../context/TemperatureContext';
 
 interface ForecastCardProps {
   forecastData: ForecastData;
 }
 
 export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
+  const { convertTemperature, unit } = useTemperature();
+
   // Group forecast data by day
   const groupedForecast = forecastData.list.reduce((acc: { [key: string]: typeof forecastData.list[0][] }, item) => {
     const date = new Date(item.dt * 1000).toLocaleDateString();
@@ -35,7 +38,7 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
 
     return {
       date,
-      avgTemp: Math.round(avgTemp),
+      avgTemp: convertTemperature(avgTemp),
       weather: mainWeather,
       icon
     };
@@ -44,15 +47,19 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       {dailyForecasts.map((forecast) => (
-        <div key={forecast.date} className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+        <div key={forecast.date} className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
           <div className="text-center">
-            <p className="text-sm text-gray-300">{new Date(forecast.date).toLocaleDateString('en-US', { weekday: 'short' })}</p>
+            <p className="text-sm text-gray-300">
+              {new Date(forecast.date).toLocaleDateString('en-US', { weekday: 'short' })}
+            </p>
             <img 
               src={`http://openweathermap.org/img/wn/${forecast.icon}@2x.png`}
               alt={forecast.weather}
               className="w-16 h-16 mx-auto"
             />
-            <p className="text-2xl font-bold text-white">{forecast.avgTemp}°C</p>
+            <p className="text-2xl font-bold text-white">
+              {forecast.avgTemp}°{unit === 'celsius' ? 'C' : 'F'}
+            </p>
             <p className="text-sm text-gray-300">{forecast.weather}</p>
           </div>
         </div>
