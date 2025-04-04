@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import WeatherCard from './components/WeatherCard'
+import { WeatherCard } from './components/WeatherCard'
 import { ForecastCard } from './components/ForecastCard'
-import SearchBar from './components/SearchBar'
+import { SearchBar } from './components/SearchBar'
 import { ThemeToggle } from './components/ThemeToggle'
 import { TemperatureToggle } from './components/TemperatureToggle'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
@@ -15,7 +15,7 @@ import { LanguageToggle } from './components/LanguageToggle'
 
 const WeatherApp: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
-  const [forecast, setForecast] = useState<ForecastData | null>(null)
+  const [forecastData, setForecastData] = useState<ForecastData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
@@ -25,16 +25,16 @@ const WeatherApp: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-      const [weatherData, forecastData] = await Promise.all([
+      const [weather, forecast] = await Promise.all([
         getWeatherByCity(city),
         getForecastByCity(city)
       ])
-      setWeatherData(weatherData)
-      setForecast(forecastData)
+      setWeatherData(weather)
+      setForecastData(forecast)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch weather data')
       setWeatherData(null)
-      setForecast(null)
+      setForecastData(null)
     } finally {
       setLoading(false)
     }
@@ -87,15 +87,15 @@ const WeatherApp: React.FC = () => {
                     ? 'bg-blue-900/20 hover:bg-blue-900/30' 
                     : 'bg-blue-50/80 hover:bg-blue-100/90'
                 }`}>
-                  <WeatherCard data={weatherData} />
+                  <WeatherCard weatherData={weatherData} />
                 </div>
-                {forecast && (
+                {forecastData && (
                   <div className={`p-8 rounded-3xl shadow-lg backdrop-blur-sm ${
                     isDark 
                       ? 'bg-blue-900/20 hover:bg-blue-900/30' 
                       : 'bg-blue-50/80 hover:bg-blue-100/90'
                   }`}>
-                    <ForecastCard forecastData={forecast} />
+                    <ForecastCard forecastData={forecastData} />
                   </div>
                 )}
               </div>
