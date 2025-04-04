@@ -7,9 +7,9 @@ const WEATHER_API_URL = 'https://api.open-meteo.com/v1';
 // Fetch options to handle CORS
 const fetchOptions: RequestInit = {
   method: 'GET',
-  mode: 'cors',
+  mode: 'no-cors',
   headers: {
-    'Content-Type': 'application/json'
+    'Accept': 'application/json'
   }
 };
 
@@ -96,26 +96,28 @@ const weatherCodeToDescription = (code: number): string => {
 // Helper function to get coordinates
 const getCoordinates = async (query: { city?: string; lat?: number; lon?: number }): Promise<Location> => {
   try {
+    let url = '';
     if (query.city) {
-      const response = await fetch(
-        `${GEOCODING_API_URL}/search?name=${encodeURIComponent(query.city)}&count=1`,
-        fetchOptions
-      );
-      if (!response.ok) throw new Error('City not found');
-      const data: GeocodingResponse = await response.json();
-      if (!data.results?.[0]) throw new Error('City not found');
-      return data.results[0];
+      url = `${GEOCODING_API_URL}/search?name=${encodeURIComponent(query.city)}&count=1`;
     } else if (query.lat && query.lon) {
-      const response = await fetch(
-        `${GEOCODING_API_URL}/reverse?latitude=${query.lat}&longitude=${query.lon}`,
-        fetchOptions
-      );
-      if (!response.ok) throw new Error('Location not found');
-      const data: GeocodingResponse = await response.json();
-      if (!data.results?.[0]) throw new Error('Location not found');
-      return data.results[0];
+      url = `${GEOCODING_API_URL}/reverse?latitude=${query.lat}&longitude=${query.lon}`;
+    } else {
+      throw new Error('Invalid query parameters');
     }
-    throw new Error('Invalid query parameters');
+
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(query.city ? 'City not found' : 'Location not found');
+    }
+
+    const data: GeocodingResponse = await response.json();
+    
+    if (!data.results?.[0]) {
+      throw new Error(query.city ? 'City not found' : 'Location not found');
+    }
+
+    return data.results[0];
   } catch (error) {
     console.error('Error getting coordinates:', error);
     throw error;
@@ -150,17 +152,15 @@ export const getForecastByCoords = async (lat: number, lon: number): Promise<For
 const fetchWeather = async (coordinates: Location): Promise<WeatherData> => {
   try {
     const { latitude, longitude, name, country } = coordinates;
+    const url = `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,pressure_msl,wind_speed_10m,weather_code`;
 
-    const weatherResponse = await fetch(
-      `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,pressure_msl,wind_speed_10m,weather_code`,
-      fetchOptions
-    );
-
-    if (!weatherResponse.ok) {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
       throw new Error('Failed to fetch weather data');
     }
 
-    const weatherData: OpenMeteoResponse = await weatherResponse.json();
+    const weatherData: OpenMeteoResponse = await response.json();
     const current = weatherData.current;
 
     return {
@@ -191,17 +191,15 @@ const fetchWeather = async (coordinates: Location): Promise<WeatherData> => {
 const fetchForecast = async (coordinates: Location): Promise<ForecastData> => {
   try {
     const { latitude, longitude, name, country } = coordinates;
+    const url = `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
-    const forecastResponse = await fetch(
-      `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`,
-      fetchOptions
-    );
-
-    if (!forecastResponse.ok) {
+    const response = await fetch(url);
+    
+    if (!response.ok) {
       throw new Error('Failed to fetch forecast data');
     }
 
-    const forecastData: OpenMeteoForecastResponse = await forecastResponse.json();
+    const forecastData: OpenMeteoForecastResponse = await response.json();
 
     return {
       city: {
@@ -225,4 +223,4 @@ const fetchForecast = async (coordinates: Location): Promise<ForecastData> => {
     console.error('Error fetching forecast:', error);
     throw error;
   }
-};
+}; 
