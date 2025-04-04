@@ -46,9 +46,9 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
     };
   });
 
-  const textColorClass = theme === 'dark' ? 'text-white' : 'text-gray-900';
-  const dayColorClass = theme === 'dark' ? 'text-gray-200' : 'text-gray-700';
-  const unitColorClass = theme === 'dark' ? 'text-gray-300' : 'text-gray-600';
+  const textColorClass = theme === 'dark' ? 'text-white' : 'text-blue-950';
+  const dayColorClass = theme === 'dark' ? 'text-gray-200' : 'text-blue-900';
+  const unitColorClass = theme === 'dark' ? 'text-gray-300' : 'text-blue-800';
 
   return (
     <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
