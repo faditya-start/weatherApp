@@ -69,7 +69,11 @@ const WeatherApp: React.FC = () => {
     }`}>
       <div className="container mx-auto px-4 py-8 h-full overflow-auto">
         <div className="max-w-4xl mx-auto space-y-8">
-          <header className="text-center space-y-4">
+          <header className="relative text-center space-y-4">
+            <div className="absolute right-0 top-0">
+              <ThemeToggle />
+            </div>
+            
             <h1 className={`text-4xl md:text-5xl font-bold ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>

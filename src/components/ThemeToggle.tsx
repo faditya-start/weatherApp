@@ -1,18 +1,25 @@
+import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 export const ThemeToggle = () => {
   const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <button
       onClick={toggleTheme}
-      className="fixed top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      className={`p-3 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+        isDark 
+          ? 'bg-gray-800 hover:bg-gray-700 text-yellow-400' 
+          : 'bg-white hover:bg-gray-100 text-gray-800 shadow-lg'
+      }`}
+      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
     >
-      {theme === 'dark' ? (
+      {isDark ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-yellow-500"
+          className="h-6 w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -27,7 +34,7 @@ export const ThemeToggle = () => {
       ) : (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-gray-700"
+          className="h-6 w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
