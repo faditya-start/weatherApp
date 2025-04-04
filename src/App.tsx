@@ -2,11 +2,9 @@ import React, { useState } from 'react'
 import WeatherCard from './components/WeatherCard'
 import { ForecastCard } from './components/ForecastCard'
 import SearchBar from './components/SearchBar'
-import { LocationButton } from './components/LocationButton'
 import { ThemeToggle } from './components/ThemeToggle'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
-import { getWeatherByCity, getForecastByCity, getWeatherByCoords, getForecastByCoords } from './services/weatherService'
-import { getCurrentPosition } from './services/geolocationService'
+import { getWeatherByCity, getForecastByCity } from './services/weatherService'
 import { WeatherData, ForecastData } from './types/weather'
 import './App.css'
 import LoadingSpinner from './components/LoadingSpinner'
@@ -16,7 +14,6 @@ const WeatherApp: React.FC = () => {
   const [forecast, setForecast] = useState<ForecastData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [locationLoading, setLocationLoading] = useState(false)
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -39,30 +36,6 @@ const WeatherApp: React.FC = () => {
     }
   }
 
-  const handleLocationClick = async () => {
-    try {
-      setLocationLoading(true)
-      setError(null)
-      const position = await getCurrentPosition()
-      const [weatherData, forecastData] = await Promise.all([
-        getWeatherByCoords(position.latitude, position.longitude),
-        getForecastByCoords(position.latitude, position.longitude)
-      ])
-      setWeatherData(weatherData)
-      setForecast(forecastData)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get location')
-      setWeatherData(null)
-      setForecast(null)
-    } finally {
-      setLocationLoading(false)
-    }
-  }
-
-  React.useEffect(() => {
-    handleLocationClick()
-  }, [])
-
   return (
     <div className={`min-h-screen w-full transition-all duration-500 ease-in-out ${
       isDark ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' : 'bg-gradient-to-br from-blue-100 via-white to-blue-50'
@@ -84,10 +57,7 @@ const WeatherApp: React.FC = () => {
             </p>
           </header>
 
-          <div className="flex items-center gap-2 justify-center">
-            <SearchBar onSearch={handleSearch} />
-            <LocationButton onClick={handleLocationClick} loading={locationLoading} />
-          </div>
+          <SearchBar onSearch={handleSearch} />
 
           <main className="space-y-6">
             {loading ? (
@@ -117,7 +87,7 @@ const WeatherApp: React.FC = () => {
                       ? 'bg-gray-800/30 hover:bg-gray-800/40' 
                       : 'bg-white/70 hover:bg-white/80'
                   }`}>
-                    <ForecastCard data={forecast} />
+                    <ForecastCard forecast={forecast} />
                   </div>
                 )}
               </div>
