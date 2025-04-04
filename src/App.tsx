@@ -16,29 +16,29 @@ import { LanguageToggle } from './components/LanguageToggle'
 const WeatherApp: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
   const [forecastData, setForecastData] = useState<ForecastData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | undefined>(undefined)
+  const [isLoading, setIsLoading] = useState(false)
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
-  const handleSearch = async (city: string) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [weather, forecast] = await Promise.all([
-        getWeatherByCity(city),
-        getForecastByCity(city)
-      ])
-      setWeatherData(weather)
-      setForecastData(forecast)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch weather data')
-      setWeatherData(null)
-      setForecastData(null)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleWeatherData = (data: WeatherData) => {
+    setWeatherData(data);
+    setError(undefined);
+  };
+
+  const handleForecastData = (data: ForecastData) => {
+    setForecastData(data);
+    setError(undefined);
+  };
+
+  const handleLoading = (loading: boolean) => {
+    setIsLoading(loading);
+  };
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+    setIsLoading(false);
+  };
 
   return (
     <div className={`min-h-screen w-full transition-all duration-500 ease-in-out ${
@@ -65,10 +65,15 @@ const WeatherApp: React.FC = () => {
             </p>
           </header>
 
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar 
+            onWeatherData={handleWeatherData} 
+            onForecastData={handleForecastData} 
+            onLoading={handleLoading}
+            onError={handleError}
+          />
 
           <main className="space-y-6">
-            {loading ? (
+            {isLoading ? (
               <div className="min-h-[400px] flex items-center justify-center animate-fadeIn">
                 <LoadingSpinner size="large" />
               </div>
@@ -87,7 +92,7 @@ const WeatherApp: React.FC = () => {
                     ? 'bg-blue-900/20 hover:bg-blue-900/30' 
                     : 'bg-blue-50/80 hover:bg-blue-100/90'
                 }`}>
-                  <WeatherCard weatherData={weatherData} />
+                  <WeatherCard weatherData={weatherData} isLoading={isLoading} error={error} />
                 </div>
                 {forecastData && (
                   <div className={`p-8 rounded-3xl shadow-lg backdrop-blur-sm ${
@@ -95,9 +100,9 @@ const WeatherApp: React.FC = () => {
                       ? 'bg-blue-900/20 hover:bg-blue-900/30' 
                       : 'bg-blue-50/80 hover:bg-blue-100/90'
                   }`}>
-                    <ForecastCard forecastData={forecastData} />
-                  </div>
-                )}
+                    <ForecastCard forecastData={forecastData} isLoading={isLoading} error={error} />
+          </div>
+        )}
               </div>
             ) : (
               <div className={`min-h-[400px] flex items-center justify-center text-center p-8 rounded-3xl transition-all duration-300 backdrop-blur-sm ${

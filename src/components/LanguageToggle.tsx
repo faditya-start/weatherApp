@@ -3,24 +3,26 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
 export const LanguageToggle: React.FC = () => {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const handleToggle = () => {
-    setLanguage(language === 'id' ? 'en' : 'id');
+  const toggleLanguage = () => {
+    const newLang = language === 'id' ? 'en' : 'id';
+    console.log('Changing language from', language, 'to', newLang);
+    setLanguage(newLang);
   };
 
   return (
     <button
-      onClick={handleToggle}
-      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+      onClick={toggleLanguage}
+      className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
         isDark
-          ? 'bg-blue-900/20 hover:bg-blue-900/30 text-blue-200'
-          : 'bg-white/60 hover:bg-white/80 text-blue-800'
+          ? 'bg-blue-500/30 hover:bg-blue-500/50 text-blue-200'
+          : 'bg-blue-100 hover:bg-blue-200 text-blue-800'
       }`}
     >
-      {language.toUpperCase()}
+      <span className="font-medium">{language === 'en' ? '🇺🇸 EN' : '🇮🇩 ID'}</span>
     </button>
   );
 }; 
