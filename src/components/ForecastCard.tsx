@@ -38,7 +38,7 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
 
     return {
       date,
-      avgTemp: convertTemperature(avgTemp),
+      avgTemp: Number(convertTemperature(avgTemp).toFixed(1)),
       weather: mainWeather,
       icon
     };
@@ -49,7 +49,7 @@ export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
       {dailyForecasts.map((forecast) => (
         <div 
           key={forecast.date} 
-          className="bg-gradient-to-b from-blue-900/40 to-blue-950/40 rounded-3xl backdrop-blur-sm p-3"
+          className="bg-gradient-to-b from-blue-950/40 to-blue-950/60 rounded-3xl backdrop-blur-sm p-3"
         >
           <div className="flex flex-col items-center space-y-1">
             <p className="text-base font-medium text-white">
