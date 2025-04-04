@@ -1,16 +1,18 @@
 import { WeatherData } from '../types/weather';
 import { getWeatherIcon } from '../utils/weatherIcons';
 
-const GEOCODING_API_URL = 'https://geocoding-api.open-meteo.com/v1';
-const WEATHER_API_URL = 'https://api.open-meteo.com/v1';
+// Using local proxy
+const GEOCODING_API_URL = '/api/geocoding';
+const WEATHER_API_URL = '/api/weather';
 
-// Fetch options to handle CORS
+// Fetch options
 const fetchOptions: RequestInit = {
   method: 'GET',
-  mode: 'no-cors',
   headers: {
-    'Accept': 'application/json'
-  }
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  },
+  credentials: 'same-origin'
 };
 
 interface Location {
@@ -105,7 +107,7 @@ const getCoordinates = async (query: { city?: string; lat?: number; lon?: number
       throw new Error('Invalid query parameters');
     }
 
-    const response = await fetch(url);
+    const response = await fetch(url, fetchOptions);
     
     if (!response.ok) {
       throw new Error(query.city ? 'City not found' : 'Location not found');
@@ -154,7 +156,7 @@ const fetchWeather = async (coordinates: Location): Promise<WeatherData> => {
     const { latitude, longitude, name, country } = coordinates;
     const url = `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,pressure_msl,wind_speed_10m,weather_code`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, fetchOptions);
     
     if (!response.ok) {
       throw new Error('Failed to fetch weather data');
@@ -193,7 +195,7 @@ const fetchForecast = async (coordinates: Location): Promise<ForecastData> => {
     const { latitude, longitude, name, country } = coordinates;
     const url = `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, fetchOptions);
     
     if (!response.ok) {
       throw new Error('Failed to fetch forecast data');
