@@ -87,7 +87,7 @@ const WeatherApp: React.FC = () => {
                       ? 'bg-gray-800/30 hover:bg-gray-800/40' 
                       : 'bg-white/70 hover:bg-white/80'
                   }`}>
-                    <ForecastCard forecast={forecast} />
+                    <ForecastCard forecastData={forecast} />
                   </div>
                 )}
               </div>
