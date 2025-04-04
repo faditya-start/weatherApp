@@ -64,22 +64,22 @@ const WeatherApp: React.FC = () => {
   }, [])
 
   return (
-    <div className={`min-h-screen w-full fixed inset-0 transition-colors duration-300 ${
+    <div className={`min-h-screen w-full transition-all duration-500 ease-in-out ${
       isDark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
     }`}>
       <div className="container mx-auto px-4 py-8 h-full overflow-auto">
         <div className="max-w-4xl mx-auto space-y-8">
           <header className="relative text-center space-y-4">
-            <div className="absolute right-0 top-0">
+            <div className="absolute right-0 top-0 transition-transform duration-300 hover:scale-110">
               <ThemeToggle />
             </div>
             
-            <h1 className={`text-4xl md:text-5xl font-bold ${
+            <h1 className={`text-4xl md:text-5xl font-bold transition-colors duration-300 ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>
               Weather App
             </h1>
-            <p className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`text-lg transition-colors duration-300 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               Get real-time weather information for any city
             </p>
           </header>
@@ -88,28 +88,28 @@ const WeatherApp: React.FC = () => {
 
           <main className="space-y-6">
             {loading ? (
-              <div className="min-h-[400px] flex items-center justify-center">
+              <div className="min-h-[400px] flex items-center justify-center animate-fadeIn">
                 <LoadingSpinner size="large" />
               </div>
             ) : error ? (
-              <div className={`p-6 rounded-2xl text-center ${
+              <div className={`p-6 rounded-2xl text-center transform transition-all duration-300 animate-slideIn ${
                 isDark 
-                  ? 'bg-red-900/50 text-red-200' 
-                  : 'bg-red-50 text-red-600'
+                  ? 'bg-red-900/50 text-red-200 hover:bg-red-900/60' 
+                  : 'bg-red-50 text-red-600 hover:bg-red-100/80'
               }`}>
                 <p className="text-lg">{error}</p>
               </div>
             ) : weatherData ? (
-              <div className="transform transition-all duration-500 ease-in-out">
+              <div className="transform transition-all duration-500 ease-out animate-slideUp">
                 <WeatherCard data={weatherData} />
               </div>
             ) : (
-              <div className={`min-h-[400px] flex items-center justify-center text-center p-6 rounded-2xl ${
+              <div className={`min-h-[400px] flex items-center justify-center text-center p-6 rounded-2xl transition-all duration-300 ${
                 isDark 
-                  ? 'bg-gray-800/50 text-gray-400' 
-                  : 'bg-gray-100/50 text-gray-600'
+                  ? 'bg-gray-800/50 text-gray-400 hover:bg-gray-800/60' 
+                  : 'bg-gray-100/50 text-gray-600 hover:bg-gray-200/50'
               }`}>
-                <p className="text-lg">
+                <p className="text-lg animate-pulse">
                   Enter a city name to get started
                 </p>
               </div>
