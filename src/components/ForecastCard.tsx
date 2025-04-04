@@ -1,3 +1,4 @@
+import React from 'react';
 import { ForecastData } from '../types/weather';
 import { useTemperature } from '../context/TemperatureContext';
 import { useTheme } from '../context/ThemeContext';
@@ -7,83 +8,86 @@ interface ForecastCardProps {
   forecastData: ForecastData;
 }
 
-export const ForecastCard = ({ forecastData }: ForecastCardProps) => {
+export const ForecastCard: React.FC<ForecastCardProps> = ({ forecastData }) => {
   const { convertTemperature, unit } = useTemperature();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const isDark = theme === 'dark';
 
-  // Mengelompokkan data ramalan cuaca berdasarkan hari
-  const groupedForecast = forecastData.list.reduce((acc: { [key: string]: typeof forecastData.list[0][] }, item) => {
-    const date = new Date(item.dt * 1000).toLocaleDateString();
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(item);
-    return acc;
-  }, {});
-
-  // Mendapatkan rata-rata harian
-  const dailyForecasts = Object.entries(groupedForecast).slice(0, 5).map(([date, items]) => {
-    const avgTemp = items.reduce((sum, item) => sum + ((item.temp.max + item.temp.min) / 2), 0) / items.length;
-    const mostFrequentWeather = items.reduce((acc, item) => {
-      const weather = item.weather[0];
-      if (!acc[weather.main]) {
-        acc[weather.main] = 0;
-      }
-      acc[weather.main]++;
-      return acc;
-    }, {} as { [key: string]: number });
-
-    const mainWeather = Object.entries(mostFrequentWeather).reduce((a, b) => 
-      a[1] > b[1] ? a : b
-    )[0];
-
-    const icon = items.find(item => item.weather[0].main === mainWeather)?.weather[0].icon || '';
-
-    return {
-      date,
-      avgTemp: Number(convertTemperature(avgTemp).toFixed(1)),
-      weather: mainWeather,
-      icon
-    };
-  });
-
-  const textColorClass = theme === 'dark' ? 'text-white' : 'text-blue-950';
-  const dayColorClass = theme === 'dark' ? 'text-gray-200' : 'text-blue-900';
-  const unitColorClass = theme === 'dark' ? 'text-gray-300' : 'text-blue-800';
-
-  const getDayTranslation = (date: string) => {
-    const day = new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
-    return t(`days.${day}`);
+  const getDayName = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat(t('locale'), { weekday: 'short' }).format(date);
   };
 
   return (
-    <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
-      {dailyForecasts.map((forecast) => (
-        <div 
-          key={forecast.date} 
-          className={`bg-gradient-to-b ${theme === 'dark' ? 'from-blue-950/40 to-blue-950/60' : 'from-blue-100/60 to-blue-200/80'} rounded-3xl backdrop-blur-sm p-3`}
-        >
-          <div className="flex flex-col items-center space-y-1">
-            <p className={`text-base font-medium ${dayColorClass}`}>
-              {getDayTranslation(forecast.date)}
-            </p>
-            <div className="flex items-baseline">
-              <span className={`text-2xl font-bold ${textColorClass}`}>
-                {forecast.avgTemp}
+    <div className="mt-6">
+      <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+        {t('ui.forecast')}
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        {forecastData.list.slice(0, 5).map((day, index) => (
+          <div
+            key={index}
+            className={`p-4 rounded-2xl backdrop-blur-sm transition-all duration-300 ${
+              isDark
+                ? 'bg-blue-900/20 hover:bg-blue-900/30'
+                : 'bg-white/60 hover:bg-white/80'
+            }`}
+          >
+            <div className="flex flex-col items-center space-y-2">
+              <span className={`text-sm font-medium ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>
+                {getDayName(day.dt_txt)}
               </span>
-              <span className={`ml-0.5 text-lg font-medium ${unitColorClass}`}>
-                °{unit === 'celsius' ? 'C' : 'F'}
-              </span>
+              
+              <img
+                src={`http://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}
+                alt={t(`weather.${day.weather[0].main}`)}
+                className="w-16 h-16"
+              />
+              
+              <div className="text-center">
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {convertTemperature(day.main.temp).toFixed(1)}
+                  </span>
+                  <span className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>
+                    °{unit === 'celsius' ? 'C' : 'F'}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col space-y-1 mt-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className={isDark ? 'text-blue-200' : 'text-blue-800'}>
+                      {t('ui.high')}:
+                    </span>
+                    <span className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {convertTemperature(day.main.temp_max).toFixed(1)}°
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className={isDark ? 'text-blue-200' : 'text-blue-800'}>
+                      {t('ui.low')}:
+                    </span>
+                    <span className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {convertTemperature(day.main.temp_min).toFixed(1)}°
+                    </span>
+                  </div>
+                </div>
+                
+                <p className={`text-sm mt-2 ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>
+                  {t(`weather.${day.weather[0].main}`)}
+                </p>
+                
+                {day.pop > 0 && (
+                  <p className={`text-xs mt-1 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                    {(day.pop * 100).toFixed(0)}% {t('ui.precipitation')}
+                  </p>
+                )}
+              </div>
             </div>
-            <img 
-              src={`http://openweathermap.org/img/wn/${forecast.icon}.png`}
-              alt={t(`weather.${forecast.weather}`)}
-              className="w-12 h-12"
-            />
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }; 

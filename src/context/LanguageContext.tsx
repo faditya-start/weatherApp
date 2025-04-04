@@ -1,92 +1,79 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-type Language = 'id' | 'en';
+import React, { createContext, useContext, useState } from 'react';
 
 interface LanguageContextType {
-  language: Language;
-  toggleLanguage: () => void;
+  language: string;
+  setLanguage: (lang: string) => void;
   t: (key: string) => string;
 }
 
 const translations = {
   en: {
-    days: {
-      Mon: 'Mon',
-      Tue: 'Tue',
-      Wed: 'Wed',
-      Thu: 'Thu',
-      Fri: 'Fri',
-      Sat: 'Sat',
-      Sun: 'Sun',
-    },
-    weather: {
-      Thunderstorm: 'Thunderstorm',
-      Drizzle: 'Drizzle',
-      Rain: 'Rain',
-      Snow: 'Snow',
-      Clear: 'Clear',
-      Clouds: 'Clouds',
-    },
-    ui: {
-      searchPlaceholder: 'Enter city name...',
-      search: 'Search',
-      feelsLike: 'Feels Like',
-      humidity: 'Humidity',
-      windSpeed: 'Wind Speed',
-      pressure: 'Pressure',
-    }
+    locale: 'en-US',
+    'ui.search': 'Search',
+    'ui.searchPlaceholder': 'Enter city name...',
+    'ui.forecast': '5-Day Forecast',
+    'ui.feelsLike': 'Feels Like',
+    'ui.humidity': 'Humidity',
+    'ui.windSpeed': 'Wind Speed',
+    'ui.pressure': 'Pressure',
+    'ui.high': 'High',
+    'ui.low': 'Low',
+    'ui.precipitation': 'chance of rain',
+    'ui.language': 'Language',
+    'ui.theme': 'Theme',
+    'ui.temperature': 'Temperature',
+    'weather.Clear': 'Clear',
+    'weather.Clouds': 'Cloudy',
+    'weather.Rain': 'Rain',
+    'weather.Drizzle': 'Drizzle',
+    'weather.Thunderstorm': 'Thunderstorm',
+    'weather.Snow': 'Snow',
+    'weather.Mist': 'Mist',
+    'weather.Partly Cloudy': 'Partly Cloudy',
+    'weather.Cloudy': 'Cloudy',
+    'weather.Rain Showers': 'Rain Showers',
+    'weather.Foggy': 'Foggy'
   },
   id: {
-    days: {
-      Mon: 'Sen',
-      Tue: 'Sel',
-      Wed: 'Rab',
-      Thu: 'Kam',
-      Fri: 'Jum',
-      Sat: 'Sab',
-      Sun: 'Min',
-    },
-    weather: {
-      Thunderstorm: 'Badai Petir',
-      Drizzle: 'Gerimis',
-      Rain: 'Hujan',
-      Snow: 'Salju',
-      Clear: 'Cerah',
-      Clouds: 'Berawan',
-    },
-    ui: {
-      searchPlaceholder: 'Masukkan nama kota...',
-      search: 'Cari',
-      feelsLike: 'Terasa Seperti',
-      humidity: 'Kelembaban',
-      windSpeed: 'Kecepatan Angin',
-      pressure: 'Tekanan',
-    }
+    locale: 'id-ID',
+    'ui.search': 'Cari',
+    'ui.searchPlaceholder': 'Masukkan nama kota...',
+    'ui.forecast': 'Prakiraan 5 Hari',
+    'ui.feelsLike': 'Terasa Seperti',
+    'ui.humidity': 'Kelembaban',
+    'ui.windSpeed': 'Kecepatan Angin',
+    'ui.pressure': 'Tekanan',
+    'ui.high': 'Tertinggi',
+    'ui.low': 'Terendah',
+    'ui.precipitation': 'kemungkinan hujan',
+    'ui.language': 'Bahasa',
+    'ui.theme': 'Tema',
+    'ui.temperature': 'Suhu',
+    'weather.Clear': 'Cerah',
+    'weather.Clouds': 'Berawan',
+    'weather.Rain': 'Hujan',
+    'weather.Drizzle': 'Gerimis',
+    'weather.Thunderstorm': 'Badai Petir',
+    'weather.Snow': 'Salju',
+    'weather.Mist': 'Berkabut',
+    'weather.Partly Cloudy': 'Berawan Sebagian',
+    'weather.Cloudy': 'Berawan',
+    'weather.Rain Showers': 'Hujan Lokal',
+    'weather.Foggy': 'Berkabut'
   }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('id');
-
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'id' ? 'en' : 'id');
-  };
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [language, setLanguage] = useState('id');
 
   const t = (key: string): string => {
-    const keys = key.split('.');
-    let value: any = translations[language];
-    
-    for (const k of keys) {
-      value = value?.[k];
-    }
-    
-    return value || key;
+    return translations[language as keyof typeof translations][key as keyof typeof translations['en']] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
