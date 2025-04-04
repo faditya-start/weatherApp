@@ -4,13 +4,15 @@ import { getWeatherIcon } from '../utils/weatherIcons';
 const GEOCODING_API_URL = 'https://geocoding-api.open-meteo.com/v1';
 const WEATHER_API_URL = 'https://api.open-meteo.com/v1';
 
+interface Location {
+  latitude: number;
+  longitude: number;
+  name: string;
+  country: string;
+}
+
 interface GeocodingResponse {
-  results?: {
-    latitude: number;
-    longitude: number;
-    name: string;
-    country: string;
-  }[];
+  results?: Location[];
 }
 
 interface OpenMeteoResponse {
@@ -78,26 +80,62 @@ const weatherCodeToDescription = (code: number): string => {
   return weatherCodes[code] || 'Unknown';
 };
 
-export const fetchWeather = async (city: string): Promise<WeatherData> => {
+// Helper function to get coordinates
+const getCoordinates = async (query: { city?: string; lat?: number; lon?: number }): Promise<Location> => {
   try {
-    // First, get coordinates from city name
-    const geocodingResponse = await fetch(
-      `${GEOCODING_API_URL}/search?name=${encodeURIComponent(city)}&count=1`
-    );
-    
-    if (!geocodingResponse.ok) {
-      throw new Error('City not found');
+    if (query.city) {
+      const response = await fetch(
+        `${GEOCODING_API_URL}/search?name=${encodeURIComponent(query.city)}&count=1`
+      );
+      if (!response.ok) throw new Error('City not found');
+      const data: GeocodingResponse = await response.json();
+      if (!data.results?.[0]) throw new Error('City not found');
+      return data.results[0];
+    } else if (query.lat && query.lon) {
+      const response = await fetch(
+        `${GEOCODING_API_URL}/reverse?latitude=${query.lat}&longitude=${query.lon}`
+      );
+      if (!response.ok) throw new Error('Location not found');
+      const data: GeocodingResponse = await response.json();
+      if (!data.results?.[0]) throw new Error('Location not found');
+      return data.results[0];
     }
+    throw new Error('Invalid query parameters');
+  } catch (error) {
+    console.error('Error getting coordinates:', error);
+    throw error;
+  }
+};
 
-    const geocodingData: GeocodingResponse = await geocodingResponse.json();
-    
-    if (!geocodingData.results?.[0]) {
-      throw new Error('City not found');
-    }
+// Get weather by city name
+export const getWeatherByCity = async (city: string): Promise<WeatherData> => {
+  const coordinates = await getCoordinates({ city });
+  return fetchWeather(coordinates);
+};
 
-    const { latitude, longitude, name, country } = geocodingData.results[0];
+// Get weather by coordinates
+export const getWeatherByCoords = async (lat: number, lon: number): Promise<WeatherData> => {
+  const coordinates = await getCoordinates({ lat, lon });
+  return fetchWeather(coordinates);
+};
 
-    // Then, get weather data using coordinates
+// Get forecast by city name
+export const getForecastByCity = async (city: string): Promise<ForecastData> => {
+  const coordinates = await getCoordinates({ city });
+  return fetchForecast(coordinates);
+};
+
+// Get forecast by coordinates
+export const getForecastByCoords = async (lat: number, lon: number): Promise<ForecastData> => {
+  const coordinates = await getCoordinates({ lat, lon });
+  return fetchForecast(coordinates);
+};
+
+// Base weather fetching function
+const fetchWeather = async (coordinates: Location): Promise<WeatherData> => {
+  try {
+    const { latitude, longitude, name, country } = coordinates;
+
     const weatherResponse = await fetch(
       `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,pressure_msl,wind_speed_10m,weather_code`
     );
@@ -109,7 +147,6 @@ export const fetchWeather = async (city: string): Promise<WeatherData> => {
     const weatherData: OpenMeteoResponse = await weatherResponse.json();
     const current = weatherData.current;
 
-    // Transform the data to match our WeatherData interface
     return {
       name,
       sys: { country },
@@ -134,26 +171,11 @@ export const fetchWeather = async (city: string): Promise<WeatherData> => {
   }
 };
 
-export const getForecastByCity = async (city: string): Promise<ForecastData> => {
+// Base forecast fetching function
+const fetchForecast = async (coordinates: Location): Promise<ForecastData> => {
   try {
-    // First, get coordinates from city name
-    const geocodingResponse = await fetch(
-      `${GEOCODING_API_URL}/search?name=${encodeURIComponent(city)}&count=1`
-    );
-    
-    if (!geocodingResponse.ok) {
-      throw new Error('City not found');
-    }
+    const { latitude, longitude } = coordinates;
 
-    const geocodingData: GeocodingResponse = await geocodingResponse.json();
-    
-    if (!geocodingData.results?.[0]) {
-      throw new Error('City not found');
-    }
-
-    const { latitude, longitude } = geocodingData.results[0];
-
-    // Then, get forecast data using coordinates
     const forecastResponse = await fetch(
       `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`
     );
@@ -164,7 +186,6 @@ export const getForecastByCity = async (city: string): Promise<ForecastData> => 
 
     const forecastData: OpenMeteoForecastResponse = await forecastResponse.json();
 
-    // Transform the data to match our ForecastData interface
     return {
       list: forecastData.daily.time.map((time, index) => ({
         dt: new Date(time).getTime() / 1000,
