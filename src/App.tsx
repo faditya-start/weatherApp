@@ -64,10 +64,10 @@ const WeatherApp: React.FC = () => {
   }, [])
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen w-full fixed inset-0 transition-colors duration-300 ${
       isDark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
     }`}>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 h-full overflow-auto">
         <div className="max-w-4xl mx-auto space-y-8">
           <header className="text-center space-y-4">
             <h1 className={`text-4xl md:text-5xl font-bold ${
