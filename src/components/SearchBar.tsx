@@ -1,15 +1,12 @@
 import React, { useState, FormEvent } from 'react';
-import { WeatherData, ForecastData } from '../types/weather';
-import { getWeatherByCity, getForecastByCity } from '../services/weatherService';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
 interface SearchBarProps {
-  onWeatherData: (data: WeatherData) => void;
-  onForecastData: (data: ForecastData) => void;
+  onSearch: (city: string) => void;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({ onWeatherData, onForecastData }) => {
+export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   const [city, setCity] = useState('');
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -18,15 +15,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onWeatherData, onForecastD
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (city.trim()) {
-      try {
-        const weatherData = await getWeatherByCity(city);
-        const forecastData = await getForecastByCity(city);
-        onWeatherData(weatherData);
-        onForecastData(forecastData);
-        setCity('');
-      } catch (error) {
-        console.error('Error fetching weather data:', error);
-      }
+      onSearch(city.trim());
+      setCity('');
     }
   };
 

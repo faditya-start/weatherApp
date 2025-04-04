@@ -1,228 +1,198 @@
-import { WeatherData } from '../types/weather';
-import { getWeatherIcon } from '../utils/weatherIcons';
+import { WeatherData, ForecastData } from '../types/weather';
 
-// Using local proxy
-const GEOCODING_API_URL = '/api/geocoding';
-const WEATHER_API_URL = '/api/weather';
+const GEOCODING_API_URL = 'https://geocoding-api.open-meteo.com/v1/search';
+const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
-// Fetch options
-const fetchOptions: RequestInit = {
-  method: 'GET',
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  },
-  credentials: 'same-origin'
-};
-
-interface Location {
-  latitude: number;
-  longitude: number;
-  name: string;
-  country: string;
+async function getCoordinates(city: string) {
+  const response = await fetch(`${GEOCODING_API_URL}?name=${encodeURIComponent(city)}&count=1`);
+  if (!response.ok) throw new Error('Failed to get location data');
+  const data = await response.json();
+  if (!data.results?.[0]) throw new Error('City not found');
+  return data.results[0];
 }
 
-interface GeocodingResponse {
-  results?: Location[];
-}
+export async function getWeatherByCity(city: string): Promise<WeatherData> {
+  const location = await getCoordinates(city);
+  const response = await fetch(
+    `${WEATHER_API_URL}?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,pressure_msl&timezone=auto`
+  );
+  if (!response.ok) throw new Error('Failed to fetch weather data');
+  const data = await response.json();
 
-interface OpenMeteoResponse {
-  current: {
-    temperature_2m: number;
-    relative_humidity_2m: number;
-    apparent_temperature: number;
-    pressure_msl: number;
-    wind_speed_10m: number;
-    weather_code: number;
+  return {
+    coord: {
+      lon: location.longitude,
+      lat: location.latitude
+    },
+    weather: [{
+      id: data.current.weather_code,
+      main: getWeatherDescription(data.current.weather_code),
+      description: getWeatherDescription(data.current.weather_code),
+      icon: getWeatherIcon(data.current.weather_code)
+    }],
+    base: 'stations',
+    main: {
+      temp: data.current.temperature_2m,
+      feels_like: data.current.apparent_temperature,
+      temp_min: data.current.temperature_2m,
+      temp_max: data.current.temperature_2m,
+      pressure: data.current.pressure_msl,
+      humidity: data.current.relative_humidity_2m
+    },
+    visibility: 10000,
+    wind: {
+      speed: data.current.wind_speed_10m,
+      deg: 0
+    },
+    clouds: {
+      all: 0
+    },
+    dt: Math.floor(Date.now() / 1000),
+    sys: {
+      type: 1,
+      id: 1,
+      country: location.country_code,
+      sunrise: Math.floor(Date.now() / 1000),
+      sunset: Math.floor(Date.now() / 1000)
+    },
+    timezone: 0,
+    id: 0,
+    name: location.name,
+    cod: 200
   };
 }
 
-interface OpenMeteoForecastResponse {
-  daily: {
-    time: string[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
-    weather_code: number[];
+export async function getForecastByCity(city: string): Promise<ForecastData> {
+  const location = await getCoordinates(city);
+  const response = await fetch(
+    `${WEATHER_API_URL}?latitude=${location.latitude}&longitude=${location.longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=auto`
+  );
+  if (!response.ok) throw new Error('Failed to fetch forecast data');
+  const data = await response.json();
+
+  const forecastList = data.daily.time.map((time: string, index: number) => ({
+    dt: Math.floor(new Date(time).getTime() / 1000),
+    main: {
+      temp: (data.daily.temperature_2m_max[index] + data.daily.temperature_2m_min[index]) / 2,
+      feels_like: (data.daily.temperature_2m_max[index] + data.daily.temperature_2m_min[index]) / 2,
+      temp_min: data.daily.temperature_2m_min[index],
+      temp_max: data.daily.temperature_2m_max[index],
+      pressure: 1013,
+      sea_level: 1013,
+      grnd_level: 1013,
+      humidity: 70,
+      temp_kf: 0
+    },
+    weather: [{
+      id: data.daily.weather_code[index],
+      main: getWeatherDescription(data.daily.weather_code[index]),
+      description: getWeatherDescription(data.daily.weather_code[index]),
+      icon: getWeatherIcon(data.daily.weather_code[index])
+    }],
+    clouds: {
+      all: data.daily.precipitation_probability_max[index] || 0
+    },
+    wind: {
+      speed: 5,
+      deg: 0,
+      gust: 0
+    },
+    visibility: 10000,
+    pop: data.daily.precipitation_probability_max[index] / 100 || 0,
+    sys: {
+      pod: 'd'
+    },
+    dt_txt: new Date(time).toISOString()
+  }));
+
+  return {
+    cod: '200',
+    message: 0,
+    cnt: forecastList.length,
+    list: forecastList,
+    city: {
+      id: 0,
+      name: location.name,
+      coord: {
+        lat: location.latitude,
+        lon: location.longitude
+      },
+      country: location.country_code,
+      population: 0,
+      timezone: 0,
+      sunrise: Math.floor(Date.now() / 1000),
+      sunset: Math.floor(Date.now() / 1000)
+    }
   };
 }
 
-export interface ForecastData {
-  city: {
-    name: string;
-    country: string;
-  };
-  list: Array<{
-    dt: number;
-    temp: {
-      min: number;
-      max: number;
-    };
-    weather: Array<{
-      main: string;
-      description: string;
-      icon: string;
-    }>;
-  }>;
-}
-
-const weatherCodeToDescription = (code: number): string => {
+function getWeatherDescription(code: number): string {
+  // WMO Weather interpretation codes (WW)
+  // https://open-meteo.com/en/docs
   const weatherCodes: { [key: number]: string } = {
-    0: 'Clear sky',
-    1: 'Mainly clear',
-    2: 'Partly cloudy',
-    3: 'Overcast',
+    0: 'Clear',
+    1: 'Clear',
+    2: 'Partly Cloudy',
+    3: 'Cloudy',
     45: 'Foggy',
-    48: 'Depositing rime fog',
-    51: 'Light drizzle',
-    53: 'Moderate drizzle',
-    55: 'Dense drizzle',
-    61: 'Slight rain',
-    63: 'Moderate rain',
-    65: 'Heavy rain',
-    71: 'Slight snow fall',
-    73: 'Moderate snow fall',
-    75: 'Heavy snow fall',
-    77: 'Snow grains',
-    80: 'Slight rain showers',
-    81: 'Moderate rain showers',
-    82: 'Violent rain showers',
-    85: 'Slight snow showers',
-    86: 'Heavy snow showers',
+    48: 'Foggy',
+    51: 'Drizzle',
+    53: 'Drizzle',
+    55: 'Drizzle',
+    56: 'Freezing Drizzle',
+    57: 'Freezing Drizzle',
+    61: 'Rain',
+    63: 'Rain',
+    65: 'Rain',
+    66: 'Freezing Rain',
+    67: 'Freezing Rain',
+    71: 'Snow',
+    73: 'Snow',
+    75: 'Snow',
+    77: 'Snow Grains',
+    80: 'Rain Showers',
+    81: 'Rain Showers',
+    82: 'Rain Showers',
+    85: 'Snow Showers',
+    86: 'Snow Showers',
     95: 'Thunderstorm',
-    96: 'Thunderstorm with slight hail',
-    99: 'Thunderstorm with heavy hail',
+    96: 'Thunderstorm',
+    99: 'Thunderstorm'
   };
   return weatherCodes[code] || 'Unknown';
-};
+}
 
-// Helper function to get coordinates
-const getCoordinates = async (query: { city?: string; lat?: number; lon?: number }): Promise<Location> => {
-  try {
-    let url = '';
-    if (query.city) {
-      url = `${GEOCODING_API_URL}/search?name=${encodeURIComponent(query.city)}&count=1`;
-    } else if (query.lat && query.lon) {
-      url = `${GEOCODING_API_URL}/reverse?latitude=${query.lat}&longitude=${query.lon}`;
-    } else {
-      throw new Error('Invalid query parameters');
-    }
-
-    const response = await fetch(url, fetchOptions);
-    
-    if (!response.ok) {
-      throw new Error(query.city ? 'City not found' : 'Location not found');
-    }
-
-    const data: GeocodingResponse = await response.json();
-    
-    if (!data.results?.[0]) {
-      throw new Error(query.city ? 'City not found' : 'Location not found');
-    }
-
-    return data.results[0];
-  } catch (error) {
-    console.error('Error getting coordinates:', error);
-    throw error;
-  }
-};
-
-// Get weather by city name
-export const getWeatherByCity = async (city: string): Promise<WeatherData> => {
-  const coordinates = await getCoordinates({ city });
-  return fetchWeather(coordinates);
-};
-
-// Get weather by coordinates
-export const getWeatherByCoords = async (lat: number, lon: number): Promise<WeatherData> => {
-  const coordinates = await getCoordinates({ lat, lon });
-  return fetchWeather(coordinates);
-};
-
-// Get forecast by city name
-export const getForecastByCity = async (city: string): Promise<ForecastData> => {
-  const coordinates = await getCoordinates({ city });
-  return fetchForecast(coordinates);
-};
-
-// Get forecast by coordinates
-export const getForecastByCoords = async (lat: number, lon: number): Promise<ForecastData> => {
-  const coordinates = await getCoordinates({ lat, lon });
-  return fetchForecast(coordinates);
-};
-
-// Base weather fetching function
-const fetchWeather = async (coordinates: Location): Promise<WeatherData> => {
-  try {
-    const { latitude, longitude, name, country } = coordinates;
-    const url = `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,pressure_msl,wind_speed_10m,weather_code`;
-
-    const response = await fetch(url, fetchOptions);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch weather data');
-    }
-
-    const weatherData: OpenMeteoResponse = await response.json();
-    const current = weatherData.current;
-
-    return {
-      name,
-      sys: { country },
-      main: {
-        temp: current.temperature_2m,
-        feels_like: current.apparent_temperature,
-        humidity: current.relative_humidity_2m,
-        pressure: current.pressure_msl
-      },
-      wind: {
-        speed: current.wind_speed_10m
-      },
-      weather: [{
-        main: weatherCodeToDescription(current.weather_code),
-        description: weatherCodeToDescription(current.weather_code),
-        icon: getWeatherIcon(current.weather_code)
-      }]
-    };
-  } catch (error) {
-    console.error('Error fetching weather:', error);
-    throw error;
-  }
-};
-
-// Base forecast fetching function
-const fetchForecast = async (coordinates: Location): Promise<ForecastData> => {
-  try {
-    const { latitude, longitude, name, country } = coordinates;
-    const url = `${WEATHER_API_URL}/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
-
-    const response = await fetch(url, fetchOptions);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch forecast data');
-    }
-
-    const forecastData: OpenMeteoForecastResponse = await response.json();
-
-    return {
-      city: {
-        name,
-        country
-      },
-      list: forecastData.daily.time.map((time, index) => ({
-        dt: new Date(time).getTime() / 1000,
-        temp: {
-          min: forecastData.daily.temperature_2m_min[index],
-          max: forecastData.daily.temperature_2m_max[index]
-        },
-        weather: [{
-          main: weatherCodeToDescription(forecastData.daily.weather_code[index]),
-          description: weatherCodeToDescription(forecastData.daily.weather_code[index]),
-          icon: getWeatherIcon(forecastData.daily.weather_code[index])
-        }]
-      }))
-    };
-  } catch (error) {
-    console.error('Error fetching forecast:', error);
-    throw error;
-  }
-}; 
+function getWeatherIcon(code: number): string {
+  // Map WMO codes to OpenWeatherMap-like icons
+  const iconMap: { [key: number]: string } = {
+    0: '01d', // Clear sky
+    1: '02d', // Mainly clear
+    2: '03d', // Partly cloudy
+    3: '04d', // Overcast
+    45: '50d', // Foggy
+    48: '50d', // Depositing rime fog
+    51: '09d', // Light drizzle
+    53: '09d', // Moderate drizzle
+    55: '09d', // Dense drizzle
+    56: '09d', // Light freezing drizzle
+    57: '09d', // Dense freezing drizzle
+    61: '10d', // Slight rain
+    63: '10d', // Moderate rain
+    65: '10d', // Heavy rain
+    66: '13d', // Light freezing rain
+    67: '13d', // Heavy freezing rain
+    71: '13d', // Slight snow fall
+    73: '13d', // Moderate snow fall
+    75: '13d', // Heavy snow fall
+    77: '13d', // Snow grains
+    80: '09d', // Slight rain showers
+    81: '09d', // Moderate rain showers
+    82: '09d', // Violent rain showers
+    85: '13d', // Slight snow showers
+    86: '13d', // Heavy snow showers
+    95: '11d', // Thunderstorm
+    96: '11d', // Thunderstorm with slight hail
+    99: '11d'  // Thunderstorm with heavy hail
+  };
+  return iconMap[code] || '01d';
+} 
